@@ -32,6 +32,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# next.js
+.next
+
 # vercel
 .vercel
 

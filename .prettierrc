@@ -4,5 +4,7 @@
 	"semi": false,
 	"singleQuote": false,
 	"trailingComma": "none",
-	"plugins": ["@trivago/prettier-plugin-sort-imports"]
+	"plugins": ["@trivago/prettier-plugin-sort-imports"],
+	"importOrder": ["<THIRD_PARTY_MODULES>", "^src/(.*)$", "^[./]"],
+	"importOrderSeparation": true
 }

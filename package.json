@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"license": "MIT",
 	"scripts": {
-		"dev": "bun run --watch example/index.ts",
+		"dev": "cd example && next dev",
 		"test": "bun test && npm run test:node",
 		"test:node": "npm install --prefix ./test/node/cjs/ && npm install --prefix ./test/node/esm/ && node ./test/node/cjs/index.js && node ./test/node/esm/index.js",
 		"build": "bun build.ts",
@@ -47,7 +47,15 @@
 		"@types/bun": "1.1.14",
 		"eslint": "9.6.0",
 		"tsup": "^8.1.0",
-		"typescript": "^5.7.2"
+		"typescript": "^5.7.2",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
+		"next": "15.1.4",
+		"tailwindcss": "^3.4.1",
+		"postcss": "^8",
+		"@types/node": "^20",
+		"@types/react": "^19",
+		"@types/react-dom": "^19"
 	},
 	"peerDependencies": {
 		"elysia": ">= 1.2.0"

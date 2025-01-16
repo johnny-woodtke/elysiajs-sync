@@ -1,12 +1,13 @@
-import sync, { tSync as _tSync } from "../src"
-import { schema } from "./schema"
 import { cors } from "@elysiajs/cors"
 import { swagger } from "@elysiajs/swagger"
 import Elysia, { t } from "elysia"
 
+import sync, { tSync as _tSync } from "../../src"
+import { schema } from "./schema"
+
 const tSync = _tSync(schema)
 
-const app = new Elysia()
+export const app = new Elysia({ prefix: "/api" })
 	.use(cors())
 	.use(sync(schema))
 	.get(
@@ -31,4 +32,5 @@ const app = new Elysia()
 		}
 	)
 	.use(swagger())
-	.listen(3000)
+
+export type App = typeof app
