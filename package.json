@@ -37,25 +37,25 @@
 		"indexed db"
 	],
 	"dependencies": {
-		"elysia": "^1.2.10",
-		"@elysiajs/eden": "^1.2.0"
+		"@elysiajs/eden": "^1.2.0",
+		"elysia": "^1.2.10"
 	},
 	"devDependencies": {
 		"@elysiajs/cors": "^1.2.0",
 		"@elysiajs/swagger": "^1.2.0",
 		"@trivago/prettier-plugin-sort-imports": "^5.2.1",
 		"@types/bun": "1.1.14",
-		"eslint": "9.6.0",
-		"tsup": "^8.1.0",
-		"typescript": "^5.7.2",
-		"react": "^19.0.0",
-		"react-dom": "^19.0.0",
-		"next": "15.1.4",
-		"tailwindcss": "^3.4.1",
-		"postcss": "^8",
 		"@types/node": "^20",
 		"@types/react": "^19",
-		"@types/react-dom": "^19"
+		"@types/react-dom": "^19",
+		"eslint": "9.6.0",
+		"next": "15.1.4",
+		"postcss": "^8",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
+		"tailwindcss": "^3.4.1",
+		"tsup": "^8.1.0",
+		"typescript": "^5.7.2"
 	},
 	"peerDependencies": {
 		"elysia": ">= 1.2.0"

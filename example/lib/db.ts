@@ -10,4 +10,23 @@ let users: Static<typeof schema.user>[] = [
 	}
 ]
 
-export { users }
+let messages: Static<typeof schema.message>[] = [
+	{
+		id: crypto.randomUUID(),
+		threadId: crypto.randomUUID(),
+		userId: users[0].id,
+		role: "user",
+		content: "Hello, how are you?",
+		createdAt: new Date()
+	},
+	{
+		id: crypto.randomUUID(),
+		threadId: crypto.randomUUID(),
+		userId: users[0].id,
+		role: "assistant",
+		content: "I'm fine, thank you!",
+		createdAt: new Date()
+	}
+]
+
+export { users, messages }
