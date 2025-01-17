@@ -1,4 +1,3 @@
-import { Treaty } from "@elysiajs/eden"
 import Elysia, { t, TSchema } from "elysia"
 
 import {
@@ -7,7 +6,9 @@ import {
 	tDeleteSchema,
 	tInsertSchema,
 	tUpdateSchema,
-	UpdateSchema
+	tUpsertSchema,
+	UpdateSchema,
+	UpsertSchema
 } from "./types"
 
 export default function sync<T extends Record<string, TSchema>>(schema: T) {
@@ -16,14 +17,15 @@ export default function sync<T extends Record<string, TSchema>>(schema: T) {
 		V extends
 			| {
 					insert?: InsertSchema<T>
-					delete?: DeleteSchema<T>
 					update?: UpdateSchema<T>
+					upsert?: UpsertSchema<T>
+					delete?: DeleteSchema<T>
 			  }
 			| undefined
 	>(response: U, props?: V) {
 		return {
 			response,
-			sync: props
+			...(props && { sync: props })
 		}
 	})
 }
@@ -35,8 +37,8 @@ export function tSync<T extends Record<string, TSchema>>(schema: T) {
 		const tableSchema = schema[table]
 		acc[table] = t.Optional(
 			t.Union([
-				t.Object({ data: tableSchema }),
-				t.Array(t.Object({ data: tableSchema }))
+				t.Object({ filter: t.Partial(tableSchema), data: tableSchema }),
+				t.Array(t.Object({ filter: t.Partial(tableSchema), data: tableSchema }))
 			])
 		)
 		return acc
@@ -52,6 +54,10 @@ export function tSync<T extends Record<string, TSchema>>(schema: T) {
 		)
 		return acc
 	}, {} as tUpdateSchema<T>)
+
+	const upsertSchema: tUpsertSchema<T> = {
+		...insertSchema
+	}
 
 	const deleteSchema = tables.reduce<tDeleteSchema<T>>((acc, table) => {
 		const tableSchema = t.Partial(schema[table])
@@ -71,75 +77,10 @@ export function tSync<T extends Record<string, TSchema>>(schema: T) {
 				t.Object({
 					insert: t.Optional(t.Object(insertSchema)),
 					update: t.Optional(t.Object(updateSchema)),
+					upsert: t.Optional(t.Object(upsertSchema)),
 					delete: t.Optional(t.Object(deleteSchema))
 				})
 			)
 		})
 	}
-}
-
-type GetDataProps<
-	T extends Record<string, TSchema>,
-	U,
-	V extends Treaty.TreatyResponse<{
-		200: {
-			response: U
-			sync?: {
-				insert?: InsertSchema<T>
-				delete?: DeleteSchema<T>
-				update?: UpdateSchema<T>
-			}
-		}
-	}>
-> = {
-	fetch: () => Promise<V>
-	preFetchGetCache: () => Promise<U | undefined>
-	postFetchWriteCache: (data: {
-		response: U
-		sync?: {
-			insert?: InsertSchema<T>
-			delete?: DeleteSchema<T>
-			update?: UpdateSchema<T>
-		}
-	}) => Promise<void>
-}
-
-export async function getData<
-	T extends Record<string, TSchema>,
-	U,
-	V extends Treaty.TreatyResponse<{
-		200: {
-			response: U
-			sync?: {
-				insert?: InsertSchema<T>
-				update?: UpdateSchema<T>
-				delete?: DeleteSchema<T>
-			}
-		}
-	}>
->({
-	fetch,
-	preFetchGetCache,
-	postFetchWriteCache
-}: GetDataProps<T, U, V>): Promise<U | V> {
-	return Promise.race([
-		new Promise<U>((res) => {
-			preFetchGetCache().then((cache) => {
-				if (cache) {
-					res(cache)
-				}
-			})
-		}),
-		new Promise<U | V>((res) => {
-			fetch().then((response) => {
-				if (response.error) {
-					res(response)
-				} else {
-					postFetchWriteCache(response.data).then(() => {
-						res(response.data.response)
-					})
-				}
-			})
-		})
-	])
 }
