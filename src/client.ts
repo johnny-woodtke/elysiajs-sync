@@ -1,7 +1,7 @@
 import { Treaty } from "@elysiajs/eden"
 import { TSchema } from "elysia"
 
-import { DeleteSchema, UpdateSchema } from "./types"
+import { DeleteSchema, UpdateSchema, UpsertSchema } from "./types"
 import { InsertSchema } from "./types"
 
 export class Sync<
@@ -12,8 +12,9 @@ export class Sync<
 			response: TPullResponse
 			sync?: {
 				insert?: InsertSchema<T>
-				delete?: DeleteSchema<T>
 				update?: UpdateSchema<T>
+				upsert?: UpsertSchema<T>
+				delete?: DeleteSchema<T>
 			}
 		}
 	}>,
@@ -23,8 +24,9 @@ export class Sync<
 			response: TPushResponse
 			sync?: {
 				insert?: InsertSchema<T>
-				delete?: DeleteSchema<T>
+				upsert?: UpsertSchema<T>
 				update?: UpdateSchema<T>
+				delete?: DeleteSchema<T>
 			}
 		}
 	}>
