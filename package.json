@@ -43,6 +43,7 @@
 	],
 	"dependencies": {
 		"@elysiajs/eden": "^1.2.0",
+		"dexie": "^4.0.11",
 		"elysia": "^1.2.10"
 	},
 	"devDependencies": {

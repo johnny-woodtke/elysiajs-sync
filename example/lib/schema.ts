@@ -1,4 +1,4 @@
-import { t } from "elysia"
+import { t } from "elysia/type-system"
 
 const user = t.Object({
 	id: t.String(),
@@ -19,3 +19,8 @@ export const schema = {
 	message,
 	user
 }
+
+export const primaryKeys = {
+	message: "id",
+	user: "id"
+} as const

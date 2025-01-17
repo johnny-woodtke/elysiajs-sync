@@ -1,11 +1,15 @@
 import { Treaty } from "@elysiajs/eden"
-import { TSchema } from "elysia"
+import Dexie, { EntityTable } from "dexie"
+import type { Static, TSchema } from "elysia"
 
 import { DeleteSchema, UpdateSchema, UpsertSchema } from "./types"
 import { InsertSchema } from "./types"
 
 export class Sync<
 	T extends Record<string, TSchema>,
+	PK extends {
+		[K in keyof T]: keyof Static<T[K]> & string
+	},
 	TPullResponse,
 	TPullSync extends Treaty.TreatyResponse<{
 		200: {
@@ -18,6 +22,7 @@ export class Sync<
 			}
 		}
 	}>,
+	TPushBody,
 	TPushResponse,
 	TPushSync extends Treaty.TreatyResponse<{
 		200: {
@@ -32,20 +37,44 @@ export class Sync<
 	}>
 > {
 	private schema: T
-	private push: () => Promise<TPushSync>
+	private primaryKeys: PK
+	private push: (body: TPushBody) => Promise<TPushSync>
 	private pull: () => Promise<TPullSync>
+	public db: Dexie & {
+		[K in keyof T]: EntityTable<Static<T[K]>, PK[K]>
+	}
 
 	constructor({
 		schema,
+		primaryKeys,
 		push,
 		pull
 	}: {
 		schema: T
-		push: () => Promise<TPushSync>
+		primaryKeys: PK
+		push: (body: TPushBody) => Promise<TPushSync>
 		pull: () => Promise<TPullSync>
 	}) {
 		this.schema = schema
+		this.primaryKeys = primaryKeys
 		this.push = push
 		this.pull = pull
+
+		this.db = new Dexie("sync") as any
+		this.db.version(1).stores(
+			Object.entries(schema).reduce<{
+				[table: string]: string | null
+			}>((acc, [table, schema]) => {
+				// get all keys
+				const keys = Object.keys(schema.properties)
+
+				// remove primaryKey
+				const filteredKeys = keys.filter((key) => key !== primaryKeys[table])
+
+				// assign formatted keys and return
+				acc[table] = [`++${primaryKeys[table]}`, ...filteredKeys].join(", ")
+				return acc
+			}, {})
+		)
 	}
 }
