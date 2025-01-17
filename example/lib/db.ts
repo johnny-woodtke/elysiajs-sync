@@ -2,7 +2,7 @@ import { Static } from "elysia"
 
 import { schema } from "./schema"
 
-let users: Static<typeof schema.user>[] = [
+export const users: Static<typeof schema.user>[] = [
 	{
 		id: crypto.randomUUID(),
 		name: "John Doe",
@@ -10,7 +10,7 @@ let users: Static<typeof schema.user>[] = [
 	}
 ]
 
-let messages: Static<typeof schema.message>[] = [
+export const messages: Static<typeof schema.message>[] = [
 	{
 		id: crypto.randomUUID(),
 		threadId: crypto.randomUUID(),
@@ -28,5 +28,3 @@ let messages: Static<typeof schema.message>[] = [
 		createdAt: new Date()
 	}
 ]
-
-export { users, messages }
