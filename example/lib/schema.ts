@@ -7,6 +7,8 @@ const user = t.Object({
 })
 
 const message = t.Object({
+	id: t.String(),
+	userId: t.String(),
 	threadId: t.String(),
 	role: t.String(),
 	content: t.String(),
