@@ -7,24 +7,37 @@ import { Sync } from "../../src/client"
 import client from "../lib/eden"
 import { schema, primaryKeys } from "../lib/schema"
 
-export default async function Home() {
+export default function Home() {
 	useEffect(() => {
+		console.log("in use effect")
 		const sync = new Sync({
 			schema,
 			primaryKeys
 		})
 
-		sync.fetch(() => client.api.messages.index.get())
-
-		client.api.messages.index.get().then(async (res) => {
-			console.log("res", res.data)
-			for (const message of res.data?.response ?? []) {
-				console.log("message", message)
-				sync.db.message.add(message).then((res) => {
-					console.log("added message", res)
+		const interval = setInterval(() => {
+			console.log("fetching")
+			sync
+				.fetch(() => client.api.messages.index.get())
+				.then((res) => {
+					if (res.data) {
+						sync.db.message.bulkPut(res.data.response)
+					}
 				})
-			}
-		})
+				.catch((e) => {
+					console.log("error fetching", e)
+				})
+			sync.db.message
+				.toArray()
+				.then((messages) => {
+					console.log("messages", messages)
+				})
+				.catch((e) => {
+					console.log("error fetching", e)
+				})
+		}, 5000)
+
+		return () => clearInterval(interval)
 	}, [])
 
 	return (

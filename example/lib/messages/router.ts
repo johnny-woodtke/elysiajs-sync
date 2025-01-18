@@ -2,24 +2,27 @@ import Elysia, { t } from "elysia"
 
 import sync, { tSync as _tSync } from "../../../src"
 import { messages } from "../db"
-import { schema } from "../schema"
+import { primaryKeys, schema } from "../schema"
 
-const tSync = _tSync(schema)
+const tSync = _tSync(schema, primaryKeys)
 
 export const messagesRouter = new Elysia({ prefix: "/messages" })
-	.use(sync(schema))
-	.get("/", ({ sync }) => {
-		return sync(messages, {
-			upsert: {
-				message: messages.map((message) => ({
-					filter: {
-						threadId: message.threadId
-					},
-					data: message
-				}))
+	.use(sync(schema, primaryKeys))
+	.get(
+		"/",
+		({ sync }) => {
+			return sync(messages, {
+				bulkAdd: {
+					message: messages
+				}
+			})
+		},
+		{
+			response: {
+				200: tSync(t.Array(schema.message))
 			}
-		})
-	})
+		}
+	)
 	.get(
 		"/threads/:threadId",
 		({ sync, params }) => {
@@ -27,13 +30,8 @@ export const messagesRouter = new Elysia({ prefix: "/messages" })
 				.filter((message) => message.threadId === params.threadId)
 				.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 			return sync(messages, {
-				upsert: {
-					message: threadMessages.map((message) => ({
-						filter: {
-							threadId: message.threadId
-						},
-						data: message
-					}))
+				bulkAdd: {
+					message: threadMessages
 				}
 			})
 		},
@@ -57,13 +55,8 @@ export const messagesRouter = new Elysia({ prefix: "/messages" })
 			}
 			messages.push(message)
 			return sync(message, {
-				upsert: {
-					message: {
-						filter: {
-							threadId: message.threadId
-						},
-						data: message
-					}
+				add: {
+					message: message
 				}
 			})
 		},

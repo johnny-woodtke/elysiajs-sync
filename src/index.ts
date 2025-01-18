@@ -1,28 +1,52 @@
+import { TOptional } from "@sinclair/typebox"
 import Elysia, { t, TSchema } from "elysia"
 
+import "./types"
 import {
-	DeleteSchema,
-	InsertSchema,
-	tDeleteSchema,
-	tInsertSchema,
-	tUpdateSchema,
-	tUpsertSchema,
-	UpdateSchema,
-	UpsertSchema
+	PrimaryKey,
+	SyncDexieAdd,
+	SyncDexieBulkAdd,
+	SyncDexieBulkDelete,
+	SyncDexieBulkPut,
+	SyncDexieDelete,
+	SyncDexiePut,
+	tSyncDexieAdd,
+	tSyncDexieBulkAdd,
+	tSyncDexieBulkDelete,
+	tSyncDexieBulkPut,
+	tSyncDexieDelete,
+	tSyncDexiePut
 } from "./types"
 
-export default function sync<T extends Record<string, TSchema>>(schema: T) {
+export default function sync<
+	T extends Record<string, TSchema>,
+	U extends PrimaryKey<T>
+>(schema: T, primaryKeys: U) {
 	return new Elysia().decorate("sync", function responseWithSync<
-		U,
-		V extends
+		V,
+		W extends
 			| {
-					insert?: InsertSchema<T>
-					update?: UpdateSchema<T>
-					upsert?: UpsertSchema<T>
-					delete?: DeleteSchema<T>
+					add?: {
+						[K in keyof T]?: SyncDexieAdd<T, U, K>
+					}
+					bulkAdd?: {
+						[K in keyof T]?: SyncDexieBulkAdd<T, U, K>
+					}
+					put?: {
+						[K in keyof T]?: SyncDexiePut<T, U, K>
+					}
+					bulkPut?: {
+						[K in keyof T]?: SyncDexieBulkPut<T, U, K>
+					}
+					delete?: {
+						[K in keyof T]?: SyncDexieDelete<T, U, K>
+					}
+					bulkDelete?: {
+						[K in keyof T]?: SyncDexieBulkDelete<T, U, K>
+					}
 			  }
 			| undefined
-	>(response: U, props?: V) {
+	>(response: V, props?: W) {
 		return {
 			response,
 			...(props && { sync: props })
@@ -30,55 +54,83 @@ export default function sync<T extends Record<string, TSchema>>(schema: T) {
 	})
 }
 
-export function tSync<T extends Record<string, TSchema>>(schema: T) {
+export function tSync<
+	T extends Record<string, TSchema>,
+	U extends PrimaryKey<T>
+>(schema: T, primaryKeys: U) {
 	const tables = Object.keys(schema) as (keyof T)[]
 
-	const insertSchema = tables.reduce<tInsertSchema<T>>((acc, table) => {
-		const tableSchema = schema[table]
-		acc[table] = t.Optional(
-			t.Union([
-				t.Object({ filter: t.Partial(tableSchema), data: tableSchema }),
-				t.Array(t.Object({ filter: t.Partial(tableSchema), data: tableSchema }))
-			])
-		)
-		return acc
-	}, {} as tInsertSchema<T>)
+	const tAdd = tables.reduce(
+		(acc, table) => {
+			acc[table] = t.Optional(schema[table]) as any
+			return acc
+		},
+		{} as {
+			[K in keyof T]: TOptional<tSyncDexieAdd<T, U, K>>
+		}
+	)
 
-	const updateSchema = tables.reduce<tUpdateSchema<T>>((acc, table) => {
-		const tableSchema = t.Partial(schema[table])
-		acc[table] = t.Optional(
-			t.Union([
-				t.Object({ filter: tableSchema, data: tableSchema }),
-				t.Array(t.Object({ filter: tableSchema, data: tableSchema }))
-			])
-		)
-		return acc
-	}, {} as tUpdateSchema<T>)
+	const tBulkAdd = tables.reduce(
+		(acc, table) => {
+			acc[table] = t.Optional(t.Array(schema[table])) as any
+			return acc
+		},
+		{} as {
+			[K in keyof T]: TOptional<tSyncDexieBulkAdd<T, U, K>>
+		}
+	)
 
-	const upsertSchema: tUpsertSchema<T> = {
-		...insertSchema
-	}
+	const tPut = tables.reduce(
+		(acc, table) => {
+			acc[table] = t.Optional(schema[table]) as any
+			return acc
+		},
+		{} as {
+			[K in keyof T]: TOptional<tSyncDexiePut<T, U, K>>
+		}
+	)
 
-	const deleteSchema = tables.reduce<tDeleteSchema<T>>((acc, table) => {
-		const tableSchema = t.Partial(schema[table])
-		acc[table] = t.Optional(
-			t.Union([
-				t.Object({ filter: tableSchema }),
-				t.Array(t.Object({ filter: tableSchema }))
-			])
-		)
-		return acc
-	}, {} as tDeleteSchema<T>)
+	const tBulkPut = tables.reduce(
+		(acc, table) => {
+			acc[table] = t.Optional(t.Array(schema[table])) as any
+			return acc
+		},
+		{} as {
+			[K in keyof T]: TOptional<tSyncDexieBulkPut<T, U, K>>
+		}
+	)
 
-	return function responseWithSync<U extends TSchema>(response: U) {
+	const tDelete = tables.reduce(
+		(acc, table) => {
+			acc[table] = t.Optional(t.String()) as any
+			return acc
+		},
+		{} as {
+			[K in keyof T]: TOptional<tSyncDexieDelete<T, U, K>>
+		}
+	)
+
+	const tBulkDelete = tables.reduce(
+		(acc, table) => {
+			acc[table] = t.Optional(t.Array(t.String())) as any
+			return acc
+		},
+		{} as {
+			[K in keyof T]: TOptional<tSyncDexieBulkDelete<T, U, K>>
+		}
+	)
+
+	return function tResponseWithSync<V extends TSchema>(response: V) {
 		return t.Object({
 			response,
 			sync: t.Optional(
 				t.Object({
-					insert: t.Optional(t.Object(insertSchema)),
-					update: t.Optional(t.Object(updateSchema)),
-					upsert: t.Optional(t.Object(upsertSchema)),
-					delete: t.Optional(t.Object(deleteSchema))
+					add: t.Optional(t.Object(tAdd)),
+					bulkAdd: t.Optional(t.Object(tBulkAdd)),
+					put: t.Optional(t.Object(tPut)),
+					bulkPut: t.Optional(t.Object(tBulkPut)),
+					delete: t.Optional(t.Object(tDelete)),
+					bulkDelete: t.Optional(t.Object(tBulkDelete))
 				})
 			)
 		})

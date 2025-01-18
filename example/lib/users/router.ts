@@ -2,23 +2,18 @@ import Elysia, { t } from "elysia"
 
 import sync, { tSync as _tSync } from "../../../src"
 import { users } from "../db"
-import { schema } from "../schema"
+import { primaryKeys, schema } from "../schema"
 
-const tSync = _tSync(schema)
+const tSync = _tSync(schema, primaryKeys)
 
 export const usersRouter = new Elysia({ prefix: "/users" })
-	.use(sync(schema))
+	.use(sync(schema, primaryKeys))
 	.get(
 		"/",
 		({ sync }) => {
 			return sync(users, {
-				upsert: {
-					user: users.map((user) => ({
-						filter: {
-							id: user.id
-						},
-						data: user
-					}))
+				bulkAdd: {
+					user: users
 				}
 			})
 		},
@@ -40,13 +35,8 @@ export const usersRouter = new Elysia({ prefix: "/users" })
 
 			// return user and sync
 			return sync(user, {
-				upsert: {
-					user: {
-						filter: {
-							id: user.id
-						},
-						data: user
-					}
+				add: {
+					user: user
 				}
 			})
 		},
@@ -68,13 +58,8 @@ export const usersRouter = new Elysia({ prefix: "/users" })
 
 			// return user and sync
 			return sync(user, {
-				upsert: {
-					user: {
-						filter: {
-							id: params.id
-						},
-						data: user
-					}
+				put: {
+					user: user
 				}
 			})
 		},
@@ -103,13 +88,8 @@ export const usersRouter = new Elysia({ prefix: "/users" })
 
 			// return user and sync
 			return sync(users[index], {
-				upsert: {
-					user: {
-						filter: {
-							id: params.id
-						},
-						data: users[index]
-					}
+				add: {
+					user: users[index]
 				}
 			})
 		},
