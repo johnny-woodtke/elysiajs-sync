@@ -13,7 +13,7 @@ export const usersRouter = new Elysia({ prefix: "/users" })
 		({ sync }) => {
 			return sync(users, {
 				user: {
-					bulkAdd: users
+					bulkPut: users
 				}
 			})
 		},
@@ -36,7 +36,7 @@ export const usersRouter = new Elysia({ prefix: "/users" })
 			// return user and sync
 			return sync(user, {
 				user: {
-					add: user
+					put: user
 				}
 			})
 		},

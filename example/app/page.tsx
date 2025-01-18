@@ -1,5 +1,6 @@
 "use client"
 
+import { useLiveQuery } from "dexie-react-hooks"
 import Image from "next/image"
 import { useEffect } from "react"
 
@@ -7,38 +8,37 @@ import { Sync } from "../../src/client"
 import client from "../lib/eden"
 import { schema, keys } from "../lib/schema"
 
+export const dynamic = "force-dynamic"
+
 export default function Home() {
 	useEffect(() => {
-		console.log("in use effect")
 		const sync = new Sync({
 			schema,
 			keys
 		})
 
 		const interval = setInterval(() => {
-			console.log("fetching")
-			sync
-				.fetch(() => client.api.messages.index.get())
-				.then((res) => {
-					if (res.data) {
-						sync.db.message.bulkPut(res.data.response)
-					}
-				})
-				.catch((e) => {
-					console.log("error fetching", e)
-				})
-			sync.db.message
-				.toArray()
-				.then((messages) => {
-					console.log("messages", messages)
-				})
-				.catch((e) => {
-					console.log("error fetching", e)
-				})
+			sync.fetch(() => client.api.messages.index.get())
+			sync.fetch(() => client.api.users.index.get())
 		}, 5000)
 
 		return () => clearInterval(interval)
 	}, [])
+
+	const messages = useLiveQuery(async () => {
+		const sync = new Sync({
+			schema,
+			keys
+		})
+		return sync.db.message?.toArray().catch((e) => {
+			console.log("error fetching from db", e)
+			return []
+		})
+	})
+
+	useEffect(() => {
+		console.log("messages", messages)
+	}, [messages])
 
 	return (
 		<div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">

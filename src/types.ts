@@ -1,7 +1,7 @@
 import { Treaty } from "@elysiajs/eden"
 import { TArray, TObject, TString } from "@sinclair/typebox"
 import Dexie, { EntityTable } from "dexie"
-import { Static, TSchema } from "elysia"
+import type { Static, TSchema } from "elysia"
 
 /**
  * Primary key of the table
