@@ -1,29 +1,31 @@
 "use client"
 
 import Image from "next/image"
+import { useEffect } from "react"
 
 import { Sync } from "../../src/client"
 import client from "../lib/eden"
 import { schema, primaryKeys } from "../lib/schema"
 
 export default async function Home() {
-	const sync = new Sync({
-		schema,
-		primaryKeys,
-		push: (body: { userId: string; role: string; content: string }) =>
-			client.api.messages.threads({ threadId: "1" }).post(body),
-		pull: () => client.api.messages.threads({ threadId: "1" }).get()
-	})
+	useEffect(() => {
+		const sync = new Sync({
+			schema,
+			primaryKeys
+		})
 
-	client.api.messages.index.get().then(async (res) => {
-		console.log("res", res.data)
-		for (const message of res.data?.response ?? []) {
-			console.log("message", message)
-			sync.db.message.add(message).then((res) => {
-				console.log("added message", res)
-			})
-		}
-	})
+		sync.fetch(() => client.api.messages.index.get())
+
+		client.api.messages.index.get().then(async (res) => {
+			console.log("res", res.data)
+			for (const message of res.data?.response ?? []) {
+				console.log("message", message)
+				sync.db.message.add(message).then((res) => {
+					console.log("added message", res)
+				})
+			}
+		})
+	}, [])
 
 	return (
 		<div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">

@@ -1,3 +1,4 @@
+import { Treaty } from "@elysiajs/eden"
 import { TArray, TObject, TOptional, TPartial, TUnion } from "@sinclair/typebox"
 import { Static, TSchema } from "elysia"
 
@@ -55,3 +56,18 @@ export type tDeleteSchema<T extends Record<string, TSchema>> = {
 		>
 	>
 }
+
+export type SyncTreatyResponse<
+	T extends Record<string, TSchema>,
+	TResponse
+> = Treaty.TreatyResponse<{
+	200: {
+		response: TResponse
+		sync?: {
+			insert?: InsertSchema<T>
+			update?: UpdateSchema<T>
+			upsert?: UpsertSchema<T>
+			delete?: DeleteSchema<T>
+		}
+	}
+}>
