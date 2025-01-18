@@ -30,7 +30,7 @@ export default function Home() {
 			schema,
 			keys
 		})
-		return sync.db.message?.toArray().catch((e) => {
+		return sync.db.message.toArray().catch((e) => {
 			console.log("error fetching from db", e)
 			return []
 		})
