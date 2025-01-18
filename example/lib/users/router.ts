@@ -2,18 +2,18 @@ import Elysia, { t } from "elysia"
 
 import sync, { tSync as _tSync } from "../../../src"
 import { users } from "../db"
-import { primaryKeys, schema } from "../schema"
+import { keys, schema } from "../schema"
 
-const tSync = _tSync(schema, primaryKeys)
+const tSync = _tSync(schema, keys)
 
 export const usersRouter = new Elysia({ prefix: "/users" })
-	.use(sync(schema, primaryKeys))
+	.use(sync(schema, keys))
 	.get(
 		"/",
 		({ sync }) => {
 			return sync(users, {
-				bulkAdd: {
-					user: users
+				user: {
+					bulkAdd: users
 				}
 			})
 		},
@@ -35,8 +35,8 @@ export const usersRouter = new Elysia({ prefix: "/users" })
 
 			// return user and sync
 			return sync(user, {
-				add: {
-					user: user
+				user: {
+					add: user
 				}
 			})
 		},
@@ -58,8 +58,8 @@ export const usersRouter = new Elysia({ prefix: "/users" })
 
 			// return user and sync
 			return sync(user, {
-				put: {
-					user: user
+				user: {
+					put: user
 				}
 			})
 		},
@@ -88,8 +88,8 @@ export const usersRouter = new Elysia({ prefix: "/users" })
 
 			// return user and sync
 			return sync(users[index], {
-				add: {
-					user: users[index]
+				user: {
+					put: users[index]
 				}
 			})
 		},

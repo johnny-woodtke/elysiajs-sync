@@ -5,14 +5,14 @@ import { useEffect } from "react"
 
 import { Sync } from "../../src/client"
 import client from "../lib/eden"
-import { schema, primaryKeys } from "../lib/schema"
+import { schema, keys } from "../lib/schema"
 
 export default function Home() {
 	useEffect(() => {
 		console.log("in use effect")
 		const sync = new Sync({
 			schema,
-			primaryKeys
+			keys
 		})
 
 		const interval = setInterval(() => {

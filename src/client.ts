@@ -1,36 +1,34 @@
 import Dexie from "dexie"
 import type { TSchema } from "elysia"
 
-import { PrimaryKey, SyncDexie, SyncTreatyResponse } from "./types"
+import { SyncDexie, SyncDexieKeys, SyncTreatyResponse } from "./types"
 
 let db: Dexie | null = null
 
-export class Sync<T extends Record<string, TSchema>, U extends PrimaryKey<T>> {
+export class Sync<
+	T extends Record<string, TSchema>,
+	U extends SyncDexieKeys<T>
+> {
 	private schema: T
-	private primaryKeys: U
+	private keys: U
 	public db: ReturnType<typeof this.initDb>
 
-	constructor({ schema, primaryKeys }: { schema: T; primaryKeys: U }) {
+	constructor({ schema, keys }: { schema: T; keys: U }) {
 		this.schema = schema
-		this.primaryKeys = primaryKeys
-		this.db = this.initDb(schema, primaryKeys)
+		this.keys = keys
+		this.db = this.initDb(schema, keys)
 	}
 
-	private initDb(schema: T, primaryKeys: U): SyncDexie<T, U> {
+	private initDb(schema: T, keys: U): SyncDexie<T, U> {
 		if (db) {
 			return db as SyncDexie<T, U>
 		}
 		db = new Dexie("sync") as SyncDexie<T, U>
 		db.version(1).stores(
-			Object.entries(schema).reduce<{
+			Object.keys(schema).reduce<{
 				[table: string]: string | null
-			}>((acc, [table, schema]) => {
-				acc[table] = [
-					`++${primaryKeys[table]}`,
-					...Object.keys(schema.properties).filter(
-						(key) => key !== primaryKeys[table]
-					)
-				].join(", ")
+			}>((acc, table) => {
+				acc[table] = keys[table].join(", ")
 				return acc
 			}, {})
 		)
