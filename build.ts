@@ -10,7 +10,7 @@ const tsupConfig: Options = {
 	clean: true,
 	bundle: true,
 	treeshake: true,
-	external: ["@elysiajs/eden", "elysia"]
+	external: ["@elysiajs/eden", "dexie", "elysia"]
 } satisfies Options
 
 await Promise.all([
