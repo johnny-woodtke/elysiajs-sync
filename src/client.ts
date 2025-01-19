@@ -17,7 +17,7 @@ let db: any = null
 export class Sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>> {
 	private schema: T
 	private keys: U
-	public db: ReturnType<typeof this.initDb>
+	public db: SyncDexie<T, U>
 
 	constructor(schema: T, keys: U) {
 		this.schema = schema
@@ -25,7 +25,7 @@ export class Sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>> {
 		this.db = this.initDb(schema, keys)
 	}
 
-	private initDb(schema: T, keys: U): SyncDexie<T, U> {
+	private initDb(schema: T, keys: U) {
 		// Enforce a single instance of db
 		if (db) {
 			return db
