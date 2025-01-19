@@ -1,11 +1,12 @@
-import Dexie from "dexie"
-import type { TSchema } from "elysia"
+import { Dexie } from "dexie"
 
 import type {
 	SyncDexie,
+	SyncDexieEntityTable,
 	SyncDexieKeys,
 	SyncDexieMethod,
 	SyncDexieMethodMap,
+	SyncDexieSchema,
 	SyncTreatyResponse
 } from "./types"
 
@@ -13,10 +14,7 @@ import type {
 // https://dexie.org/docs/Tutorial/React#3-create-a-file-dbjs-or-dbts
 let db: any = null
 
-export class Sync<
-	T extends Record<string, TSchema>,
-	U extends SyncDexieKeys<T>
-> {
+export class Sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>> {
 	private schema: T
 	private keys: U
 	public db: ReturnType<typeof this.initDb>
@@ -78,29 +76,78 @@ export class Sync<
 		}
 	>(sync: V) {
 		// Initialize transaction
-		await db.transaction(
+		await this.db.transaction(
 			"rw",
 			// Get all tables
-			Object.keys(sync).map((key) => db[key]),
+			Object.keys(sync).map((key: keyof T) => this.db[key]),
 			// Execute sync
 			async () => {
 				// Iterate over each table
 				for (const [key, methodsWithArgs] of Object.entries(sync)) {
-					const table = db[key]
+					const table = this.db[key as keyof T]
 					// Iterate over each method
-					for (const [method, value] of Object.entries(methodsWithArgs)) {
-						const dexieMethod = method as SyncDexieMethod
-						const args = value as SyncDexieMethodMap<
-							T,
-							U,
-							typeof dexieMethod,
-							keyof T
-						>
+					for (const [method, args] of Object.entries(methodsWithArgs)) {
 						// Execute method
-						await table[dexieMethod](...args)
+						await this.syncMap[method as SyncDexieMethod](table, args as never)
 					}
 				}
 			}
 		)
+	}
+
+	private syncMap: {
+		[K in SyncDexieMethod]: <K2 extends keyof T>(
+			table: SyncDexieEntityTable<T, U, K2>,
+			args: SyncDexieMethodMap<T, U, K, K2>
+		) => Promise<void>
+	} = {
+		add: async <K extends keyof T>(
+			table: SyncDexieEntityTable<T, U, K>,
+			args: SyncDexieMethodMap<T, U, "add", K>
+		) => {
+			await table.add(...args)
+		},
+		bulkAdd: async <K extends keyof T>(
+			table: SyncDexieEntityTable<T, U, K>,
+			args: SyncDexieMethodMap<T, U, "bulkAdd", K>
+		) => {
+			await table.bulkAdd(...args)
+		},
+		put: async <K extends keyof T>(
+			table: SyncDexieEntityTable<T, U, K>,
+			args: SyncDexieMethodMap<T, U, "put", K>
+		) => {
+			await table.put(...args)
+		},
+		bulkPut: async <K extends keyof T>(
+			table: SyncDexieEntityTable<T, U, K>,
+			args: SyncDexieMethodMap<T, U, "bulkPut", K>
+		) => {
+			await table.bulkPut(...args)
+		},
+		update: async <K extends keyof T>(
+			table: SyncDexieEntityTable<T, U, K>,
+			args: SyncDexieMethodMap<T, U, "update", K>
+		) => {
+			await table.update(...args)
+		},
+		bulkUpdate: async <K extends keyof T>(
+			table: SyncDexieEntityTable<T, U, K>,
+			args: SyncDexieMethodMap<T, U, "bulkUpdate", K>
+		) => {
+			await table.bulkUpdate(...args)
+		},
+		delete: async <K extends keyof T>(
+			table: SyncDexieEntityTable<T, U, K>,
+			args: SyncDexieMethodMap<T, U, "delete", K>
+		) => {
+			await table.delete(...args)
+		},
+		bulkDelete: async <K extends keyof T>(
+			table: SyncDexieEntityTable<T, U, K>,
+			args: SyncDexieMethodMap<T, U, "bulkDelete", K>
+		) => {
+			await table.bulkDelete(...args)
+		}
 	}
 }

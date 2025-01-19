@@ -1,6 +1,6 @@
 import Elysia, { t } from "elysia"
 
-import sync, { tSync as _tSync } from "../../../src"
+import { tSync as _tSync, sync } from "../../../src"
 import { messages } from "../db"
 import { keys, schema } from "../schema"
 

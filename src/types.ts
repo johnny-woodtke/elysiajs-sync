@@ -1,21 +1,32 @@
 import type { Treaty } from "@elysiajs/eden"
 import type {
 	TArray,
-	TObject,
-	TString,
-	TTuple,
 	TBoolean,
+	TIndex,
+	TObject,
 	TPartial,
-	TUnion,
-	TUndefined
+	TTuple,
+	TUndefined,
+	TUnion
 } from "@sinclair/typebox"
-import Dexie, { type EntityTable } from "dexie"
+import type {
+	Dexie,
+	EntityTable,
+	IDType,
+	IndexableTypePart,
+	UpdateSpec
+} from "dexie"
 import type { Static, TSchema } from "elysia"
 
 /**
- * Primary key of the table
+ * Schema of the Dexie DB
  */
-export type SyncDexieKeys<T extends Record<string, TSchema>> = {
+export type SyncDexieSchema = Record<string, TSchema>
+
+/**
+ * Indexes of the schema's tables
+ */
+export type SyncDexieKeys<T extends SyncDexieSchema> = {
 	[K in keyof T]: [
 		string & keyof Static<T[K]>,
 		...(string & keyof Static<T[K]>)[]
@@ -36,10 +47,19 @@ export type SyncDexieMethod =
 	| "bulkDelete"
 
 /**
+ * Entity table with primary key
+ */
+export type SyncDexieEntityTable<
+	T extends SyncDexieSchema,
+	U extends SyncDexieKeys<T>,
+	V extends keyof T
+> = EntityTable<Static<T[V]>, U[V][0]>
+
+/**
  * Dexie DB containing all tables and their schemas, specified primary keys
  */
 export type SyncDexie<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>
 > = Dexie & {
 	[K in keyof T]: EntityTable<Static<T[K]>, U[K][0]>
@@ -49,40 +69,44 @@ export type SyncDexie<
  * Parameters for adding a single item to a Dexie table
  */
 export type SyncDexieAdd<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = [Static<T[V]>, string | undefined]
+> = [Static<T[V]>, IDType<Static<T[V]>, U[V][0]> | undefined]
 
 /**
  * Typebox equivalent of SyncDexieAdd
  */
 export type tSyncDexieAdd<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = TTuple<[T[V], TUnion<[TString, TUndefined]>]>
+> = TTuple<[T[V], TUnion<[TIndex<T[V], [U[V][0]]>, TUndefined]>]>
 
 /**
  * Parameters for adding multiple items to a Dexie table
  */
 export type SyncDexieBulkAdd<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = [Static<T[V]>[], string[] | undefined, { allKeys: boolean } | undefined]
+> = [
+	Static<T[V]>[],
+	IndexableTypePart[] | undefined,
+	{ allKeys: boolean } | undefined
+]
 
 /**
  * Typebox equivalent of SyncDexieBulkAdd
  */
 export type tSyncDexieBulkAdd<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
 > = TTuple<
 	[
 		TArray<T[V]>,
-		TUnion<[TArray<TString>, TUndefined]>,
+		TUnion<[TArray<TIndex<T[V], [U[V][0]]>>, TUndefined]>,
 		TUnion<[TObject<{ allKeys: TBoolean }>, TUndefined]>
 	]
 >
@@ -91,40 +115,44 @@ export type tSyncDexieBulkAdd<
  * Parameters for putting a single item into a Dexie table
  */
 export type SyncDexiePut<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = [Static<T[V]>, string | undefined]
+> = [Static<T[V]>, IDType<Static<T[V]>, U[V][0]> | undefined]
 
 /**
  * Typebox equivalent of SyncDexiePut
  */
 export type tSyncDexiePut<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = TTuple<[T[V], TUnion<[TString, TUndefined]>]>
+> = TTuple<[T[V], TUnion<[TIndex<T[V], [U[V][0]]>, TUndefined]>]>
 
 /**
  * Parameters for putting multiple items into a Dexie table
  */
 export type SyncDexieBulkPut<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = [Static<T[V]>[], string[] | undefined, { allKeys: boolean } | undefined]
+> = [
+	Static<T[V]>[],
+	IndexableTypePart[] | undefined,
+	{ allKeys: boolean } | undefined
+]
 
 /**
  * Typebox equivalent of SyncDexieBulkPut
  */
 export type tSyncDexieBulkPut<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
 > = TTuple<
 	[
 		TArray<T[V]>,
-		TUnion<[TArray<TString>, TUndefined]>,
+		TUnion<[TArray<TIndex<T[V], [U[V][0]]>>, TUndefined]>,
 		TUnion<[TObject<{ allKeys: TBoolean }>, TUndefined]>
 	]
 >
@@ -133,31 +161,31 @@ export type tSyncDexieBulkPut<
  * Parameters for updating a single item in a Dexie table
  */
 export type SyncDexieUpdate<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = [string, Partial<Static<T[V]>>]
+> = [IDType<Static<T[V]>, U[V][0]>, UpdateSpec<Static<T[V]>>]
 
 /**
  * Typebox equivalent of SyncDexieUpdate
  */
 export type tSyncDexieUpdate<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = TTuple<[TString, TPartial<T[V]>]>
+> = TTuple<[TIndex<T[V], [U[V][0]]>, TPartial<T[V]>]>
 
 /**
  * Parameters for updating multiple items in a Dexie table
  */
 export type SyncDexieBulkUpdate<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
 > = [
 	{
-		key: string
-		changes: Partial<Static<T[V]>>
+		key: IDType<Static<T[V]>, U[V][0]>
+		changes: UpdateSpec<Static<T[V]>>
 	}[]
 ]
 
@@ -165,57 +193,63 @@ export type SyncDexieBulkUpdate<
  * Typebox equivalent of SyncDexieBulkUpdate
  */
 export type tSyncDexieBulkUpdate<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = TArray<
-	TObject<{
-		key: TString
-		changes: TPartial<T[V]>
-	}>
+> = TTuple<
+	[
+		TArray<
+			TObject<{
+				// need to use properties syntax because
+				// type is too deep for TIndex<T[V], [U[V][0]]>
+				key: T[V]["properties"][U[V][0]]
+				changes: TPartial<T[V]>
+			}>
+		>
+	]
 >
 
 /**
  * Parameters for deleting a single item from a Dexie table
  */
 export type SyncDexieDelete<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = [string]
+> = [IDType<Static<T[V]>, U[V][0]>]
 
 /**
  * Typebox equivalent of SyncDexieDelete
  */
 export type tSyncDexieDelete<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = TTuple<[TString]>
+> = TTuple<[TIndex<T[V], [U[V][0]]>]>
 
 /**
  * Parameters for deleting multiple items from a Dexie table
  */
 export type SyncDexieBulkDelete<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = [string[]]
+> = [IDType<Static<T[V]>, U[V][0]>[]]
 
 /**
  * Typebox equivalent of SyncDexieBulkDelete
  */
 export type tSyncDexieBulkDelete<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends keyof T
-> = TTuple<[TArray<TString>]>
+> = TTuple<[TArray<TIndex<T[V], [U[V][0]]>>]>
 
 /**
  * Map of Dexie methods to their parameters
  */
 export type SyncDexieMethodMap<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends SyncDexieMethod,
 	W extends keyof T
@@ -234,7 +268,7 @@ export type SyncDexieMethodMap<
  * Map of Dexie methods to their Typebox equivalent parameters
  */
 export type tSyncDexieMethodMap<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V extends SyncDexieMethod,
 	W extends keyof T
@@ -253,7 +287,7 @@ export type tSyncDexieMethodMap<
  * Response from a Treaty request with sync options
  */
 export type SyncTreatyResponse<
-	T extends Record<string, TSchema>,
+	T extends SyncDexieSchema,
 	U extends SyncDexieKeys<T>,
 	V
 > = Treaty.TreatyResponse<{
