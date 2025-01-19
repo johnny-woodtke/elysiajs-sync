@@ -119,7 +119,7 @@ const treatyResponse = await sync.fetch(() =>
 )
 ```
 
-#### 4. Use the Synced Data
+### 4. Use the Synced Data
 
 The sync client gives you direct, type-safe access to the client-side IndexedDB (via Dexie.js):
 
