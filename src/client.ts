@@ -19,7 +19,7 @@ export class Sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>> {
 	private keys: U
 	public db: ReturnType<typeof this.initDb>
 
-	constructor({ schema, keys }: { schema: T; keys: U }) {
+	constructor(schema: T, keys: U) {
 		this.schema = schema
 		this.keys = keys
 		this.db = this.initDb(schema, keys)

@@ -12,14 +12,7 @@ import { useMemo } from "react"
 import { Sync } from "../../src/client"
 
 export default function Home() {
-	const sync = useMemo(
-		() =>
-			new Sync({
-				schema,
-				keys
-			}),
-		[]
-	)
+	const sync = useMemo(() => new Sync(schema, keys), [])
 
 	const todos = useLiveQuery(() => sync.db.todo.toArray()) ?? []
 
@@ -42,10 +35,29 @@ export default function Home() {
 		todo: Pick<Static<typeof schema.todo>, "id" | "completed">
 	) {
 		await Promise.all([
-			sync.db.todo.update(todo.id, { completed: todo.completed }),
-			sync.fetch(() =>
-				client.api.todos({ id: todo.id }).patch({ completed: todo.completed })
-			)
+			sync.db.todo.update(todo.id, {
+				completed: todo.completed,
+				updatedAt: new Date()
+			}),
+			sync
+				.fetch(() =>
+					client.api.todos({ id: todo.id }).patch({ completed: todo.completed })
+				)
+				.then(async (res) => {
+					// handle 404
+					if (res.status !== 404) {
+						return
+					}
+
+					// get local todo
+					const localTodo = await sync.db.todo.get(todo.id)
+					if (!localTodo) {
+						return
+					}
+
+					// push local todo to server
+					await sync.fetch(() => client.api.todos.post(localTodo))
+				})
 		])
 	}
 

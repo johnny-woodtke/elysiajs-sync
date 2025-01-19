@@ -24,12 +24,19 @@ export const app = new Elysia({ prefix: "/api" })
 
 			return sync(todo, {
 				todo: {
-					add: [todo, undefined]
+					put: [todo, undefined]
 				}
 			})
 		},
 		{
-			body: t.Omit(schema.todo, ["id", "createdAt", "updatedAt"]),
+			body: t.Object({
+				id: t.Optional(t.String()),
+				title: t.String(),
+				description: t.String(),
+				completed: t.Boolean(),
+				createdAt: t.Optional(t.Date()),
+				updatedAt: t.Optional(t.Date())
+			}),
 			response: {
 				200: tSync(schema.todo)
 			}
@@ -90,7 +97,7 @@ export const app = new Elysia({ prefix: "/api" })
 			params: t.Object({
 				id: t.Index(schema.todo, ["id"])
 			}),
-			body: t.Partial(t.Omit(schema.todo, ["id", "createdAt", "updatedAt"])),
+			body: t.Partial(schema.todo),
 			response: {
 				200: tSync(schema.todo),
 				404: t.String()
