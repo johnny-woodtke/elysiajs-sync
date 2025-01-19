@@ -38,36 +38,61 @@ export function tSync<
 			acc[table] = t.Optional(
 				t.Object({
 					add: t.Optional(
-						t.Tuple([schema[table], t.Union([t.String(), t.Undefined()])])
+						t.Tuple([
+							schema[table],
+							t.Union([t.Index(schema[table], [keys[table][0]]), t.Undefined()])
+						])
 					),
 					bulkAdd: t.Optional(
 						t.Tuple([
 							t.Array(schema[table]),
-							t.Union([t.Array(t.String()), t.Undefined()]),
+							t.Union([
+								t.Array(t.Index(schema[table], [keys[table][0]])),
+								t.Undefined()
+							]),
 							t.Union([t.Object({ allKeys: t.Boolean() }), t.Undefined()])
 						])
 					),
 					put: t.Optional(
-						t.Tuple([schema[table], t.Union([t.String(), t.Undefined()])])
+						t.Tuple([
+							schema[table],
+							t.Union([t.Index(schema[table], [keys[table][0]]), t.Undefined()])
+						])
 					),
 					bulkPut: t.Optional(
 						t.Tuple([
 							t.Array(schema[table]),
-							t.Union([t.Array(t.String()), t.Undefined()]),
+							t.Union([
+								t.Array(t.Index(schema[table], [keys[table][0]])),
+								t.Undefined()
+							]),
 							t.Union([t.Object({ allKeys: t.Boolean() }), t.Undefined()])
 						])
 					),
-					update: t.Optional(t.Tuple([t.String(), t.Partial(schema[table])])),
-					bulkUpdate: t.Optional(
-						t.Array(
-							t.Object({
-								key: t.String(),
-								changes: t.Partial(schema[table])
-							})
-						)
+					update: t.Optional(
+						t.Tuple([
+							t.Index(schema[table], [keys[table][0]]),
+							t.Partial(schema[table])
+						])
 					),
-					delete: t.Optional(t.Tuple([t.String()])),
-					bulkDelete: t.Optional(t.Tuple([t.Array(t.String())]))
+					bulkUpdate: t.Optional(
+						t.Tuple([
+							t.Array(
+								t.Object({
+									key: t.Index(schema[table], [
+										keys[table][0]
+									]) as T[typeof table]["properties"][U[typeof table][0]],
+									changes: t.Partial(schema[table])
+								})
+							)
+						])
+					),
+					delete: t.Optional(
+						t.Tuple([t.Index(schema[table], [keys[table][0]])])
+					),
+					bulkDelete: t.Optional(
+						t.Tuple([t.Array(t.Index(schema[table], [keys[table][0]]))])
+					)
 				})
 			)
 			return acc
