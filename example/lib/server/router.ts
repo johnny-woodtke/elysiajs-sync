@@ -11,21 +11,6 @@ const tSync = _tSync(schema, keys)
 export const app = new Elysia({ prefix: "/api" })
 	.use(cors())
 	.use(sync(schema, keys))
-	.get(
-		"/todos",
-		({ sync }) => {
-			return sync(todos, {
-				todo: {
-					bulkPut: [todos, undefined, undefined]
-				}
-			})
-		},
-		{
-			response: {
-				200: tSync(t.Array(schema.todo))
-			}
-		}
-	)
 	.post(
 		"/todos",
 		({ sync, body }) => {

@@ -21,26 +21,26 @@ export default function Home() {
 		[]
 	)
 
-	const todos = useLiveQuery(() => sync.db.todo.toArray())
+	const todos = useLiveQuery(() => sync.db.todo.toArray()) ?? []
 
-	const addTodo = async (
+	async function addTodo(
 		newTodo: Pick<Static<typeof schema.todo>, "title" | "description">
-	) => {
+	) {
 		await sync.fetch(() =>
 			client.api.todos.post({ ...newTodo, completed: false })
 		)
 	}
 
-	const deleteTodo = async (id: string) => {
+	async function deleteTodo(id: string) {
 		await Promise.all([
 			sync.db.todo.delete(id),
 			sync.fetch(() => client.api.todos({ id }).delete())
 		])
 	}
 
-	const toggleComplete = async (
+	async function toggleComplete(
 		todo: Pick<Static<typeof schema.todo>, "id" | "completed">
-	) => {
+	) {
 		await Promise.all([
 			sync.db.todo.update(todo.id, { completed: todo.completed }),
 			sync.fetch(() =>
@@ -66,7 +66,7 @@ export default function Home() {
 			<main className="flex flex-col gap-8 max-w-2xl mx-auto w-full">
 				<TodoForm onSubmit={addTodo} />
 				<TodoList
-					todos={todos ?? []}
+					todos={todos}
 					onToggleComplete={toggleComplete}
 					onDelete={deleteTodo}
 				/>
@@ -74,7 +74,7 @@ export default function Home() {
 
 			<footer className="flex gap-6 flex-wrap items-center justify-center">
 				<p className="text-sm text-black/60 dark:text-white/60">
-					Built with Elysia and Dexie
+					Built with Dexie and Elysia
 				</p>
 			</footer>
 		</div>
