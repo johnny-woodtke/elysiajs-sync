@@ -1,9 +1,9 @@
 import { t } from "elysia/type-system"
 
-import { SyncDexieKeys, SyncDexieSchema } from "../../src/types"
+import { SyncDexieKeys, SyncDexieSchema } from "../../../src/types"
 
 const todo = t.Object({
-	["++id"]: t.String(),
+	id: t.String(),
 	title: t.String(),
 	description: t.String(),
 	completed: t.Boolean(),
@@ -16,5 +16,5 @@ export const schema = {
 } satisfies SyncDexieSchema
 
 export const keys = {
-	todo: ["++id", "completed", "createdAt", "updatedAt"]
+	todo: ["id", "completed", "createdAt", "updatedAt"]
 } satisfies SyncDexieKeys<typeof schema>

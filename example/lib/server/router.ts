@@ -1,10 +1,10 @@
+import { keys, schema } from "@/lib/client/schema"
 import { cors } from "@elysiajs/cors"
 import { swagger } from "@elysiajs/swagger"
 import { Elysia, error, Static, t } from "elysia"
 
-import { tSync as _tSync, sync } from "../../src"
+import { tSync as _tSync, sync } from "../../../src"
 import { todos } from "./db"
-import { keys, schema } from "./schema"
 
 const tSync = _tSync(schema, keys)
 
@@ -30,7 +30,7 @@ export const app = new Elysia({ prefix: "/api" })
 		"/todos",
 		({ sync, body }) => {
 			const todo: Static<typeof schema.todo> = {
-				["++id"]: crypto.randomUUID(),
+				id: crypto.randomUUID(),
 				createdAt: new Date(),
 				updatedAt: new Date(),
 				...body
@@ -44,7 +44,7 @@ export const app = new Elysia({ prefix: "/api" })
 			})
 		},
 		{
-			body: t.Omit(schema.todo, ["++id", "createdAt", "updatedAt"]),
+			body: t.Omit(schema.todo, ["id", "createdAt", "updatedAt"]),
 			response: {
 				200: tSync(schema.todo)
 			}
@@ -53,7 +53,7 @@ export const app = new Elysia({ prefix: "/api" })
 	.get(
 		"/todos/:id",
 		({ sync, params, error }) => {
-			const todo = todos.find((todo) => todo["++id"] === params.id)
+			const todo = todos.find((todo) => todo.id === params.id)
 			if (!todo) {
 				return error(404, "Todo not found")
 			}
@@ -66,7 +66,7 @@ export const app = new Elysia({ prefix: "/api" })
 		},
 		{
 			params: t.Object({
-				id: t.Index(schema.todo, ["++id"])
+				id: t.Index(schema.todo, ["id"])
 			}),
 			response: {
 				200: tSync(schema.todo),
@@ -77,7 +77,7 @@ export const app = new Elysia({ prefix: "/api" })
 	.patch(
 		"/todos/:id",
 		({ sync, params, body }) => {
-			const idx = todos.findIndex((todo) => todo["++id"] === params.id)
+			const idx = todos.findIndex((todo) => todo.id === params.id)
 			if (idx === -1) {
 				return error(404, "Todo not found")
 			}
@@ -92,7 +92,7 @@ export const app = new Elysia({ prefix: "/api" })
 			return sync(updatedTodo, {
 				todo: {
 					update: [
-						updatedTodo["++id"],
+						updatedTodo.id,
 						{
 							...body,
 							updatedAt: updatedTodo.updatedAt
@@ -103,9 +103,9 @@ export const app = new Elysia({ prefix: "/api" })
 		},
 		{
 			params: t.Object({
-				id: t.Index(schema.todo, ["++id"])
+				id: t.Index(schema.todo, ["id"])
 			}),
-			body: t.Partial(t.Omit(schema.todo, ["++id", "createdAt", "updatedAt"])),
+			body: t.Partial(t.Omit(schema.todo, ["id", "createdAt", "updatedAt"])),
 			response: {
 				200: tSync(schema.todo),
 				404: t.String()
@@ -115,7 +115,7 @@ export const app = new Elysia({ prefix: "/api" })
 	.delete(
 		"/todos/:id",
 		({ sync, params }) => {
-			const idx = todos.findIndex((todo) => todo["++id"] === params.id)
+			const idx = todos.findIndex((todo) => todo.id === params.id)
 			if (idx === -1) {
 				return error(404, "Todo not found")
 			}
@@ -123,16 +123,16 @@ export const app = new Elysia({ prefix: "/api" })
 			const deletedTodo = todos[idx]
 			todos.splice(idx, 1)
 
-			return sync(deletedTodo, {
-				todo: { delete: [deletedTodo["++id"]] }
+			return sync(deletedTodo.id, {
+				todo: { delete: [deletedTodo.id] }
 			})
 		},
 		{
 			params: t.Object({
-				id: t.Index(schema.todo, ["++id"])
+				id: t.Index(schema.todo, ["id"])
 			}),
 			response: {
-				200: tSync(schema.todo),
+				200: tSync(t.Index(schema.todo, ["id"])),
 				404: t.String()
 			}
 		}
