@@ -1,6 +1,6 @@
 {
 	"name": "elysiajs-sync",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"license": "MIT",
 	"scripts": {
 		"dev": "cd example && next dev",
