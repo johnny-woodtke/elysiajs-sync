@@ -1,7 +1,7 @@
-import { TOptional, TObject } from "@sinclair/typebox"
-import Elysia, { t, TSchema } from "elysia"
+import type { TOptional, TObject } from "@sinclair/typebox"
+import Elysia, { t, type TSchema } from "elysia"
 
-import {
+import type {
 	SyncDexieKeys,
 	SyncDexieMethod,
 	SyncDexieMethodMap,
@@ -11,7 +11,7 @@ import {
 export default function sync<
 	T extends Record<string, TSchema>,
 	U extends SyncDexieKeys<T>
->(schema: T, primaryKeys: U) {
+>(schema: T, keys: U) {
 	return new Elysia().decorate("sync", function responseWithSync<
 		V,
 		W extends
@@ -37,14 +37,39 @@ export function tSync<
 		(acc, table) => {
 			acc[table] = t.Optional(
 				t.Object({
-					add: t.Optional(schema[table]),
-					bulkAdd: t.Optional(t.Array(schema[table])),
-					put: t.Optional(schema[table]),
-					bulkPut: t.Optional(t.Array(schema[table])),
-					delete: t.Optional(t.String()),
-					bulkDelete: t.Optional(t.Array(t.String()))
+					add: t.Optional(
+						t.Tuple([schema[table], t.Union([t.String(), t.Undefined()])])
+					),
+					bulkAdd: t.Optional(
+						t.Tuple([
+							t.Array(schema[table]),
+							t.Union([t.Array(t.String()), t.Undefined()]),
+							t.Union([t.Object({ allKeys: t.Boolean() }), t.Undefined()])
+						])
+					),
+					put: t.Optional(
+						t.Tuple([schema[table], t.Union([t.String(), t.Undefined()])])
+					),
+					bulkPut: t.Optional(
+						t.Tuple([
+							t.Array(schema[table]),
+							t.Union([t.Array(t.String()), t.Undefined()]),
+							t.Union([t.Object({ allKeys: t.Boolean() }), t.Undefined()])
+						])
+					),
+					update: t.Optional(t.Tuple([t.String(), t.Partial(schema[table])])),
+					bulkUpdate: t.Optional(
+						t.Array(
+							t.Object({
+								key: t.String(),
+								changes: t.Partial(schema[table])
+							})
+						)
+					),
+					delete: t.Optional(t.Tuple([t.String()])),
+					bulkDelete: t.Optional(t.Tuple([t.Array(t.String())]))
 				})
-			) as any
+			)
 			return acc
 		},
 		{} as {

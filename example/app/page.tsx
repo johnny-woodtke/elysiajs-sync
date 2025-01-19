@@ -18,8 +18,22 @@ export default function Home() {
 		})
 
 		const interval = setInterval(() => {
-			sync.fetch(() => client.api.messages.index.get())
-			sync.fetch(() => client.api.users.index.get())
+			sync
+				.fetch(() => client.api.messages.index.get())
+				.then(() => {
+					console.log("messages fetched")
+				})
+				.catch((e) => {
+					console.log("error fetching from db", e)
+				})
+			sync
+				.fetch(() => client.api.users.index.get())
+				.then(() => {
+					console.log("users fetched")
+				})
+				.catch((e) => {
+					console.log("error fetching from db", e)
+				})
 		}, 5000)
 
 		return () => clearInterval(interval)
@@ -36,9 +50,24 @@ export default function Home() {
 		})
 	})
 
+	const users = useLiveQuery(async () => {
+		const sync = new Sync({
+			schema,
+			keys
+		})
+		return sync.db.user.toArray().catch((e) => {
+			console.log("error fetching from db", e)
+			return []
+		})
+	})
+
 	useEffect(() => {
 		console.log("messages", messages)
 	}, [messages])
+
+	useEffect(() => {
+		console.log("users", users)
+	}, [users])
 
 	return (
 		<div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">

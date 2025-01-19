@@ -1,7 +1,7 @@
 import Dexie from "dexie"
 import type { TSchema } from "elysia"
 
-import {
+import type {
 	SyncDexie,
 	SyncDexieKeys,
 	SyncDexieMethod,
@@ -97,7 +97,7 @@ export class Sync<
 							keyof T
 						>
 						// Execute method
-						await table[dexieMethod](args)
+						await table[dexieMethod](...args)
 					}
 				}
 			}

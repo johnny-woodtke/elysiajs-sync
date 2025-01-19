@@ -13,7 +13,7 @@ export const messagesRouter = new Elysia({ prefix: "/messages" })
 		({ sync }) => {
 			return sync(messages, {
 				message: {
-					bulkPut: messages
+					bulkPut: [messages, undefined, undefined]
 				}
 			})
 		},
@@ -31,7 +31,7 @@ export const messagesRouter = new Elysia({ prefix: "/messages" })
 				.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 			return sync(messages, {
 				message: {
-					bulkPut: threadMessages
+					bulkPut: [threadMessages, undefined, undefined]
 				}
 			})
 		},
@@ -56,7 +56,7 @@ export const messagesRouter = new Elysia({ prefix: "/messages" })
 			messages.push(message)
 			return sync(message, {
 				message: {
-					put: message
+					put: [message, undefined]
 				}
 			})
 		},
