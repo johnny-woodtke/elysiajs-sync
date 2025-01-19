@@ -1,74 +1,10 @@
 "use client"
 
-import { useLiveQuery } from "dexie-react-hooks"
 import Image from "next/image"
-import { useEffect } from "react"
-
-import { Sync } from "../../src/client"
-import client from "../lib/eden"
-import { schema, keys } from "../lib/schema"
 
 export const dynamic = "force-dynamic"
 
 export default function Home() {
-	useEffect(() => {
-		const sync = new Sync({
-			schema,
-			keys
-		})
-
-		const interval = setInterval(() => {
-			sync
-				.fetch(() => client.api.messages.index.get())
-				.then(() => {
-					console.log("messages fetched")
-				})
-				.catch((e) => {
-					console.log("error fetching from db", e)
-				})
-			sync
-				.fetch(() => client.api.users.index.get())
-				.then(() => {
-					console.log("users fetched")
-				})
-				.catch((e) => {
-					console.log("error fetching from db", e)
-				})
-		}, 5000)
-
-		return () => clearInterval(interval)
-	}, [])
-
-	const messages = useLiveQuery(async () => {
-		const sync = new Sync({
-			schema,
-			keys
-		})
-		return sync.db.message.toArray().catch((e) => {
-			console.log("error fetching from db", e)
-			return []
-		})
-	})
-
-	const users = useLiveQuery(async () => {
-		const sync = new Sync({
-			schema,
-			keys
-		})
-		return sync.db.user.toArray().catch((e) => {
-			console.log("error fetching from db", e)
-			return []
-		})
-	})
-
-	useEffect(() => {
-		console.log("messages", messages)
-	}, [messages])
-
-	useEffect(() => {
-		console.log("users", users)
-	}, [users])
-
 	return (
 		<div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
 			<main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">

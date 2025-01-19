@@ -2,27 +2,19 @@ import { t } from "elysia/type-system"
 
 import { SyncDexieKeys, SyncDexieSchema } from "../../src/types"
 
-const user = t.Object({
-	id: t.String(),
-	name: t.String(),
-	email: t.String()
-})
-
-const message = t.Object({
-	id: t.String(),
-	userId: t.String(),
-	threadId: t.String(),
-	role: t.String(),
-	content: t.String(),
-	createdAt: t.Date()
+const todo = t.Object({
+	["++id"]: t.String(),
+	title: t.String(),
+	description: t.String(),
+	completed: t.Boolean(),
+	createdAt: t.Date(),
+	updatedAt: t.Date()
 })
 
 export const schema = {
-	message,
-	user
+	todo
 } satisfies SyncDexieSchema
 
 export const keys = {
-	message: ["++id" as "id", "userId", "threadId", "role", "createdAt"],
-	user: ["++id" as "id", "name", "email"]
+	todo: ["++id", "completed", "createdAt", "updatedAt"]
 } satisfies SyncDexieKeys<typeof schema>
