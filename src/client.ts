@@ -1,5 +1,4 @@
-import Dexie from "dexie"
-import type { TSchema } from "elysia"
+import { Dexie } from "dexie"
 
 import type {
 	SyncDexie,
@@ -7,6 +6,7 @@ import type {
 	SyncDexieKeys,
 	SyncDexieMethod,
 	SyncDexieMethodMap,
+	SyncDexieSchema,
 	SyncTreatyResponse
 } from "./types"
 
@@ -14,10 +14,7 @@ import type {
 // https://dexie.org/docs/Tutorial/React#3-create-a-file-dbjs-or-dbts
 let db: any = null
 
-export class Sync<
-	T extends Record<string, TSchema>,
-	U extends SyncDexieKeys<T>
-> {
+export class Sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>> {
 	private schema: T
 	private keys: U
 	public db: ReturnType<typeof this.initDb>

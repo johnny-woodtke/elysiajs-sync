@@ -1,6 +1,6 @@
 import { t } from "elysia/type-system"
 
-import { SyncDexieKeys } from "../../src/types"
+import { SyncDexieKeys, SyncDexieSchema } from "../../src/types"
 
 const user = t.Object({
 	id: t.String(),
@@ -20,7 +20,7 @@ const message = t.Object({
 export const schema = {
 	message,
 	user
-}
+} satisfies SyncDexieSchema
 
 export const keys = {
 	message: ["++id" as "id", "userId", "threadId", "role", "createdAt"],

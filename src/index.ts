@@ -1,17 +1,18 @@
-import type { TOptional, TObject } from "@sinclair/typebox"
-import Elysia, { t, type TSchema } from "elysia"
+import type { TObject, TOptional } from "@sinclair/typebox"
+import { Elysia, t, type TSchema } from "elysia"
 
 import type {
 	SyncDexieKeys,
 	SyncDexieMethod,
 	SyncDexieMethodMap,
+	SyncDexieSchema,
 	tSyncDexieMethodMap
 } from "./types"
 
-export default function sync<
-	T extends Record<string, TSchema>,
-	U extends SyncDexieKeys<T>
->(schema: T, keys: U) {
+export function sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>>(
+	schema: T,
+	keys: U
+) {
 	return new Elysia().decorate("sync", function responseWithSync<
 		V,
 		W extends
@@ -24,15 +25,15 @@ export default function sync<
 	>(response: V, props?: W) {
 		return {
 			response,
-			...(props && { sync: props })
+			sync: props
 		}
 	})
 }
 
-export function tSync<
-	T extends Record<string, TSchema>,
-	U extends SyncDexieKeys<T>
->(schema: T, keys: U) {
+export function tSync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>>(
+	schema: T,
+	keys: U
+) {
 	const tSync = (Object.keys(schema) as (keyof T)[]).reduce(
 		(acc, table) => {
 			acc[table] = t.Optional(
