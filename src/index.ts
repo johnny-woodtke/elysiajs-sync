@@ -2,6 +2,8 @@ import type { TObject, TOptional } from "@sinclair/typebox"
 import { Elysia, t, type TSchema } from "elysia"
 
 import type {
+	NonNegativeInteger,
+	SyncConfig,
 	SyncDexieKeys,
 	SyncDexieMethod,
 	SyncDexieMethodMap,
@@ -9,10 +11,13 @@ import type {
 	tSyncDexieMethodMap
 } from "./types"
 
-export function sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>>(
-	schema: T,
-	keys: U
-) {
+export function sync<
+	T extends SyncDexieSchema,
+	U extends SyncDexieKeys<T>,
+	V extends number,
+	W extends NonNegativeInteger<V>,
+	X extends string
+>(config: SyncConfig<T, U, V, W, X>) {
 	return new Elysia().decorate("sync", function responseWithSync<
 		V,
 		W extends
@@ -30,10 +35,13 @@ export function sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>>(
 	})
 }
 
-export function tSync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>>(
-	schema: T,
-	keys: U
-) {
+export function tSync<
+	T extends SyncDexieSchema,
+	U extends SyncDexieKeys<T>,
+	V extends number,
+	W extends NonNegativeInteger<V>,
+	X extends string
+>({ schema, keys }: SyncConfig<T, U, V, W, X>) {
 	const tSync = (Object.keys(schema) as (keyof T)[]).reduce(
 		(acc, table) => {
 			acc[table] = t.Optional(

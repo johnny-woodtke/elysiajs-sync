@@ -14,6 +14,7 @@ import type {
 	EntityTable,
 	IDType,
 	IndexableTypePart,
+	Transaction,
 	UpdateSpec
 } from "dexie"
 import type { Static, TSchema } from "elysia"
@@ -31,6 +32,57 @@ export type SyncDexieKeys<T extends SyncDexieSchema> = {
 		string & keyof Static<T[K]>,
 		...(string & keyof Static<T[K]>)[]
 	]
+}
+
+type Enumerate<
+	N extends number,
+	Acc extends number[] = []
+> = Acc["length"] extends N
+	? Acc[number]
+	: Enumerate<N, [...Acc, Acc["length"]]>
+
+type Range<F extends number, T extends number> = Exclude<
+	Enumerate<T>,
+	Enumerate<F>
+>
+
+/**
+ * Previous versions of the Dexie DB
+ *
+ * @link https://dexie.org/docs/Version/Version.upgrade()
+ * @link https://dexie.org/docs/Tutorial/Design#database-versioning
+ */
+export type SyncDexiePreviousVersion<T extends number> = {
+	verno: Range<1, T>
+	keys: Record<string, string[]>
+	upgrade?: (trans: Transaction) => Promise<void>
+}
+
+/**
+ * Helper type to ensure that the latest version number is a non-negative integer
+ */
+export type NonNegativeInteger<T extends number> = `${T}` extends
+	| `-${string}`
+	| `${string}.${string}`
+	? never
+	: T
+
+/**
+ * Configuration for the sync plugin
+ */
+export type SyncConfig<
+	T extends SyncDexieSchema,
+	U extends SyncDexieKeys<T>,
+	V extends number,
+	W extends NonNegativeInteger<V>,
+	X extends string
+> = {
+	name: X
+	schema: T
+	keys: U
+	latestVerno: W
+	upgrade?: (trans: Transaction) => Promise<void>
+	previousVersions: SyncDexiePreviousVersion<W>[]
 }
 
 /**

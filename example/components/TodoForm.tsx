@@ -1,18 +1,18 @@
 "use client"
 
-import { schema } from "@/lib/client/schema"
+import { config } from "@/lib/client/schema"
 import type { Static } from "elysia"
 import { useState } from "react"
 
 interface TodoFormProps {
 	onSubmit: (
-		todo: Pick<Static<typeof schema.todo>, "title" | "description">
+		todo: Pick<Static<typeof config.schema.todo>, "title" | "description">
 	) => Promise<void>
 }
 
 export function TodoForm({ onSubmit }: TodoFormProps) {
 	const [newTodo, setNewTodo] = useState<
-		Pick<Static<typeof schema.todo>, "title" | "description">
+		Pick<Static<typeof config.schema.todo>, "title" | "description">
 	>({
 		title: "",
 		description: ""

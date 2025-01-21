@@ -1,4 +1,4 @@
-import { keys, schema } from "@/lib/client/schema"
+import { config } from "@/lib/client/schema"
 import { cors } from "@elysiajs/cors"
 import { swagger } from "@elysiajs/swagger"
 import { Elysia, error, Static, t } from "elysia"
@@ -6,15 +6,15 @@ import { Elysia, error, Static, t } from "elysia"
 import { tSync as _tSync, sync } from "../../../src"
 import { todos } from "./db"
 
-const tSync = _tSync(schema, keys)
+const tSync = _tSync(config)
 
 export const app = new Elysia({ prefix: "/api" })
 	.use(cors())
-	.use(sync(schema, keys))
+	.use(sync(config))
 	.post(
 		"/todos",
 		({ sync, body }) => {
-			const todo: Static<typeof schema.todo> = {
+			const todo: Static<typeof config.schema.todo> = {
 				id: crypto.randomUUID(),
 				createdAt: new Date(),
 				updatedAt: new Date(),
@@ -38,7 +38,7 @@ export const app = new Elysia({ prefix: "/api" })
 				updatedAt: t.Optional(t.Date())
 			}),
 			response: {
-				200: tSync(schema.todo)
+				200: tSync(config.schema.todo)
 			}
 		}
 	)
@@ -58,10 +58,10 @@ export const app = new Elysia({ prefix: "/api" })
 		},
 		{
 			params: t.Object({
-				id: t.Index(schema.todo, ["id"])
+				id: t.Index(config.schema.todo, ["id"])
 			}),
 			response: {
-				200: tSync(schema.todo),
+				200: tSync(config.schema.todo),
 				404: t.String()
 			}
 		}
@@ -95,11 +95,11 @@ export const app = new Elysia({ prefix: "/api" })
 		},
 		{
 			params: t.Object({
-				id: t.Index(schema.todo, ["id"])
+				id: t.Index(config.schema.todo, ["id"])
 			}),
-			body: t.Partial(schema.todo),
+			body: t.Partial(config.schema.todo),
 			response: {
-				200: tSync(schema.todo),
+				200: tSync(config.schema.todo),
 				404: t.String()
 			}
 		}
@@ -121,10 +121,10 @@ export const app = new Elysia({ prefix: "/api" })
 		},
 		{
 			params: t.Object({
-				id: t.Index(schema.todo, ["id"])
+				id: t.Index(config.schema.todo, ["id"])
 			}),
 			response: {
-				200: tSync(t.Index(schema.todo, ["id"])),
+				200: tSync(t.Index(config.schema.todo, ["id"])),
 				404: t.String()
 			}
 		}
