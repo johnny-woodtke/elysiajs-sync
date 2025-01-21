@@ -2,22 +2,20 @@
 
 import { TodoForm } from "@/components/TodoForm"
 import { TodoList } from "@/components/TodoList"
+import { useSync } from "@/hooks/useSync"
 import { client } from "@/lib/client/eden"
-import { keys, schema } from "@/lib/client/schema"
+import { config } from "@/lib/client/schema"
 import { useLiveQuery } from "dexie-react-hooks"
 import type { Static } from "elysia"
 import Image from "next/image"
-import { useMemo } from "react"
-
-import { Sync } from "../../src/client"
 
 export default function Home() {
-	const sync = useMemo(() => new Sync(schema, keys), [])
+	const { sync, db } = useSync()
 
-	const todos = useLiveQuery(() => sync.db.todo.toArray()) ?? []
+	const todos = useLiveQuery(() => db.todo.toArray()) ?? []
 
 	async function addTodo(
-		newTodo: Pick<Static<typeof schema.todo>, "title" | "description">
+		newTodo: Pick<Static<typeof config.schema.todo>, "title" | "description">
 	) {
 		await sync.fetch(() =>
 			client.api.todos.post({ ...newTodo, completed: false })
@@ -26,16 +24,16 @@ export default function Home() {
 
 	async function deleteTodo(id: string) {
 		await Promise.all([
-			sync.db.todo.delete(id),
+			db.todo.delete(id),
 			sync.fetch(() => client.api.todos({ id }).delete())
 		])
 	}
 
 	async function toggleComplete(
-		todo: Pick<Static<typeof schema.todo>, "id" | "completed">
+		todo: Pick<Static<typeof config.schema.todo>, "id" | "completed">
 	) {
 		await Promise.all([
-			sync.db.todo.update(todo.id, {
+			db.todo.update(todo.id, {
 				completed: todo.completed,
 				updatedAt: new Date()
 			}),
@@ -50,7 +48,7 @@ export default function Home() {
 					}
 
 					// get local todo
-					const localTodo = await sync.db.todo.get(todo.id)
+					const localTodo = await db.todo.get(todo.id)
 					if (!localTodo) {
 						return
 					}

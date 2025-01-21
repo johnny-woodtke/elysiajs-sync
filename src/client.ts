@@ -1,6 +1,8 @@
 import { Dexie } from "dexie"
 
 import type {
+	NonNegativeInteger,
+	SyncConfig,
 	SyncDexie,
 	SyncDexieEntityTable,
 	SyncDexieKeys,
@@ -12,49 +14,74 @@ import type {
 
 // use a single instance of db
 // https://dexie.org/docs/Tutorial/React#3-create-a-file-dbjs-or-dbts
-let db: any = null
+let db: Dexie | null = null
 
-export class Sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>> {
-	private schema: T
-	private keys: U
-	public db: SyncDexie<T, U>
+export class Sync<
+	T extends SyncDexieSchema,
+	U extends SyncDexieKeys<T>,
+	V extends number,
+	W extends NonNegativeInteger<V>,
+	X extends string
+> {
+	private config: SyncConfig<T, U, V, W, X>
 
-	constructor(schema: T, keys: U) {
-		this.schema = schema
-		this.keys = keys
-		this.db = this.initDb(schema, keys)
+	constructor(config: SyncConfig<T, U, V, W, X>) {
+		this.config = config
 	}
 
-	private initDb(schema: T, keys: U) {
-		// Enforce a single instance of db
+	public getDb(): SyncDexie<T, U> {
 		if (db) {
-			return db
+			return db as SyncDexie<T, U>
 		}
+		return this.initDb(this.config)
+	}
 
+	private initDb(config: SyncConfig<T, U, V, W, X>): SyncDexie<T, U> {
 		// Initialize db
-		db = new Dexie("sync")
+		db = new Dexie(config.name)
 
-		// Define stores
-		const stores = Object.keys(schema).reduce<{
-			[table: string]: string | null
-		}>((acc, table) => {
-			acc[table] = keys[table].join(", ")
-			return acc
-		}, {})
-		db.version(1).stores(stores)
-
-		// Initialize tables immediately after defining schema
-		for (const tableName of Object.keys(schema)) {
-			db[tableName] = db.table(tableName)
+		// Define previous versions
+		for (const version of config.previousVersions) {
+			db.version(version.verno)
+				.stores(this.convertKeysToStores(version.keys))
+				.upgrade(async (trans) => {
+					await version.upgrade?.(trans)
+				})
 		}
+
+		// Define current version
+		db.version(config.latestVerno)
+			.stores(this.convertKeysToStores(config.keys))
+			.upgrade(async (trans) => {
+				await config.upgrade?.(trans)
+			})
+
+		// Initialize tables
+		const temp: any = db
+		for (const tableName of Object.keys(config.keys)) {
+			temp[tableName] = db.table(tableName)
+		}
+		db = temp
 
 		// Return db
-		return db
+		return db as SyncDexie<T, U>
+	}
+
+	private convertKeysToStores(
+		keys: Record<string, string[]>
+	): Record<string, string> {
+		return Object.entries(keys).reduce<Record<string, string>>(
+			(acc, [table, keys]) => {
+				acc[table] = keys.join(", ")
+				return acc
+			},
+			{}
+		)
 	}
 
 	public async fetch<V, W extends SyncTreatyResponse<T, U, V>>(
 		callback: () => Promise<W>
-	) {
+	): Promise<W> {
 		// Execute callback
 		const res = await callback()
 
@@ -74,17 +101,20 @@ export class Sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>> {
 				[K2 in SyncDexieMethod]?: SyncDexieMethodMap<T, U, K2, K>
 			}
 		}
-	>(sync: V) {
+	>(sync: V): Promise<void> {
+		// Get db
+		const db = this.getDb()
+
 		// Initialize transaction
-		await this.db.transaction(
+		await db.transaction(
 			"rw",
 			// Get all tables
-			Object.keys(sync).map((key: keyof T) => this.db[key]),
+			Object.keys(sync).map((key: keyof T) => db[key]),
 			// Execute sync
 			async () => {
 				// Iterate over each table
 				for (const [key, methodsWithArgs] of Object.entries(sync)) {
-					const table = this.db[key as keyof T]
+					const table = db[key as keyof T]
 					// Iterate over each method
 					for (const [method, args] of Object.entries(methodsWithArgs)) {
 						// Execute method
@@ -150,4 +180,14 @@ export class Sync<T extends SyncDexieSchema, U extends SyncDexieKeys<T>> {
 			await table.bulkDelete(...args)
 		}
 	}
+}
+
+export function getSyncConfig<
+	T extends SyncDexieSchema,
+	U extends SyncDexieKeys<T>,
+	V extends number,
+	W extends NonNegativeInteger<V>,
+	X extends string
+>(props: SyncConfig<T, U, V, W, X>) {
+	return props
 }

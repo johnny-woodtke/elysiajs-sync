@@ -1,12 +1,12 @@
 "use client"
 
-import { schema } from "@/lib/client/schema"
+import { config } from "@/lib/client/schema"
 import type { Static } from "elysia"
 
 interface TodoItemProps {
-	todo: Static<typeof schema.todo>
+	todo: Static<typeof config.schema.todo>
 	onToggleComplete: (
-		todo: Pick<Static<typeof schema.todo>, "id" | "completed">
+		todo: Pick<Static<typeof config.schema.todo>, "id" | "completed">
 	) => Promise<void>
 	onDelete: (id: string) => Promise<void>
 }
