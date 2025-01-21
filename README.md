@@ -11,6 +11,7 @@ A plugin for building offline-first Elysia applications with seamless client-ser
 - 🔍 Efficient bulk operations support
 - 📐 Built-in TypeScript support with full type inference
 - 🤝 Framework-agnostic client: integrate with any frontend framework
+- 📈 Schema versioning support with migration capabilities
 
 ## Installation
 
@@ -20,29 +21,41 @@ bun add elysiajs-sync
 
 ## Usage
 
-### 1. Define the IDB Schema
+### 1. Define the Sync Configuration
 
-First, define your IndexedDB schema and specify the indexes:
+First, define your sync configuration with schema and indexes:
 
 ```typescript
-// Import from "elysia/type-system" to make the schema client-side compatible
 import { t } from "elysia/type-system"
-import { SyncDexieSchema, SyncDexieKeys } from "elysiajs-sync/types"
+import { getSyncConfig } from "elysiajs-sync/client"
 
-export const schema = {
-	todo: t.Object({
-		id: t.String(),
-		title: t.String(),
-		description: t.String(),
-		completed: t.Boolean(),
-		createdAt: t.Date(),
-		updatedAt: t.Date()
-	})
-} satisfies SyncDexieSchema
+const todo = t.Object({
+	id: t.String(),
+	title: t.String(),
+	description: t.String(),
+	completed: t.Boolean(),
+	createdAt: t.Date(),
+	updatedAt: t.Date()
+})
 
-export const keys = {
-	todo: ["id", "completed", "createdAt", "updatedAt"]
-} satisfies SyncDexieKeys<typeof schema>
+export const config = getSyncConfig({
+	name: "todo-sync",
+	schema: {
+		todo
+	},
+	keys: {
+		todo: ["id", "completed", "createdAt", "updatedAt"]
+	},
+	latestVerno: 2,
+	previousVersions: [
+		{
+			verno: 1,
+			keys: {
+				todo: ["id", "completed"]
+			}
+		}
+	]
+})
 ```
 
 ### 2. Instrument Server
@@ -50,17 +63,20 @@ export const keys = {
 Use the sync plugin in your Elysia app:
 
 ```typescript
+import { cors } from "@elysiajs/cors"
 import { swagger } from "@elysiajs/swagger"
 import { Elysia, t } from "elysia"
 import { sync, tSync as _tSync } from "elysiajs-sync"
 
-// Import the schema/keys from wherever they're defined
-import { schema, keys } from "./schema"
+// Import the config from wherever it's defined
+import { config } from "./schema"
 
-const tSync = _tSync(schema, keys)
+// Optional: only needed to support Swagger docs
+const tSync = _tSync(config)
 
-const app = new Elysia()
-	.use(sync(schema, keys))
+const app = new Elysia({ prefix: "/api" })
+	.use(cors())
+	.use(sync(config))
 	.post(
 		"/todos",
 		({ sync, body }) => {
@@ -74,15 +90,18 @@ const app = new Elysia()
 			// Return with sync instructions
 			return sync(todo, {
 				todo: {
-					add: [todo, undefined]
+					put: [todo, undefined]
 				}
 			})
 		},
 		{
-			body: t.Omit(schema.todo, ["id", "createdAt", "updatedAt"]),
+			body: t.Object({
+				title: t.String(),
+				description: t.String(),
+				completed: t.Boolean()
+			}),
 			response: {
-				// Optional: only needed to support Swagger docs
-				200: tSync(schema.todo)
+				200: tSync(config.schema.todo)
 			}
 		}
 	)
@@ -91,76 +110,68 @@ const app = new Elysia()
 export type App = typeof app
 ```
 
-### 3. Fetch with Sync Client
+### 3. Use in React Components
 
-Initialize sync and treaty:
+Create a hook to access the sync client:
 
 ```typescript
-import { treaty } from "@elysiajs/eden"
 import { Sync } from "elysiajs-sync/client"
+import { useMemo } from "react"
 
-import { schema, keys } from "./schema"
-// Import the server type from wherever it's defined
-import type { App } from "./server"
+import { config } from "./schema"
 
-// Initialize sync on the client-side
-// It needs access to the IndexedDB, which is only available in the browser
-const sync = new Sync(schema, keys)
-
-const client = treaty<App>("http://localhost:3000")
-
-// Use the sync client to make requests that automatically sync
-const treatyResponse = await sync.fetch(() =>
-	client.api.todos.post({
-		title: "New Todo",
-		description: "Description",
-		completed: false
-	})
-)
+export function useSync() {
+	const sync = useMemo(() => new Sync(config), [])
+	const db = sync.getDb()
+	return { sync, db }
+}
 ```
 
-### 4. Use the Synced Data
-
-The sync client gives you direct, type-safe access to the client-side IndexedDB (via Dexie.js):
+Then use it in your components:
 
 ```typescript
-import { Sync } from "elysiajs-sync/client"
+function TodoList() {
+	const { db } = useSync()
+	const todos = useLiveQuery(() => db.todo.toArray())
 
-import { schema, keys } from "./schema"
-
-const sync = new Sync(schema, keys)
-
-const todos = sync.db.todo.toArray()
+	// Use todos in your component
+}
 ```
 
 ## Supported Operations
 
 - Single record operations:
 
-  - `add`: Add a new record
   - `put`: Insert or update a record
+  - `add`: Add a new record
   - `update`: Update an existing record
   - `delete`: Delete a record
 
 - Bulk operations:
 
-  - `bulkAdd`: Add multiple records
   - `bulkPut`: Insert or update multiple records
+  - `bulkAdd`: Add multiple records
   - `bulkUpdate`: Update multiple records
   - `bulkDelete`: Delete multiple records
 
 ## How it Works
 
-elysiajs-sync provides a seamless way to keep your client-side IndexedDB in sync with your server-side data. When making API requests:
+elysiajs-sync provides a seamless way to keep your client-side IndexedDB in sync with your server-side data:
 
-1. The server includes sync instructions in the response
-2. The client automatically applies these sync instructions to the local database
-3. All operations are type-safe and validated against your schema
-4. The local database can be used offline, with changes syncing when back online
+1. Define a schema and sync configuration with versioning support
+2. Server includes sync instructions in API responses
+3. Client automatically applies these sync instructions to the local database
+4. All operations are type-safe and validated against your schema
+5. The local database can be used offline, with changes syncing when back online
 
 ## Example
 
-The example is a simple todo list app that uses elysiajs-sync to keep the client-side IndexedDB in sync with the server-side data.
+Check out the example directory for a complete todo list application that demonstrates:
+
+- Schema configuration with versioning
+- Server-side sync implementation
+- React hooks and components using the sync client
+- Offline-first data management
 
 ### Run the Example
 
