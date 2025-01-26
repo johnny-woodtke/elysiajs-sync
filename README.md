@@ -1,6 +1,6 @@
 # elysiajs-sync
 
-A plugin for building offline-first Elysia applications with seamless client-server data synchronization using Dexie.js.
+A lightweight framework for building offline-first Elysia web applications with seamless client-server data synchronization using Dexie.js.
 
 ## Features
 
