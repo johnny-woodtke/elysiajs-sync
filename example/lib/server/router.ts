@@ -44,10 +44,11 @@ export const app = new Elysia({ prefix: "/api" })
 	)
 	.get(
 		"/todos/:id",
-		({ sync, params, error }) => {
+		({ sync, params, set }) => {
 			const todo = todos.find((todo) => todo.id === params.id)
 			if (!todo) {
-				return error(404, "Todo not found")
+				set.status = 404
+				return "Todo not found"
 			}
 
 			return sync(todo, {
@@ -68,15 +69,18 @@ export const app = new Elysia({ prefix: "/api" })
 	)
 	.patch(
 		"/todos/:id",
-		({ sync, params, body }) => {
+		({ sync, params, body, set }) => {
 			const idx = todos.findIndex((todo) => todo.id === params.id)
 			if (idx === -1) {
-				return error(404, "Todo not found")
+				set.status = 404
+				return "Todo not found"
 			}
 
 			const updatedTodo = {
 				...todos[idx],
-				...body,
+				...Object.fromEntries(
+					Object.entries(body).filter(([_, value]) => value !== undefined)
+				),
 				updatedAt: new Date()
 			}
 			todos[idx] = updatedTodo
@@ -106,10 +110,11 @@ export const app = new Elysia({ prefix: "/api" })
 	)
 	.delete(
 		"/todos/:id",
-		({ sync, params }) => {
+		({ sync, params, set }) => {
 			const idx = todos.findIndex((todo) => todo.id === params.id)
 			if (idx === -1) {
-				return error(404, "Todo not found")
+				set.status = 404
+				return "Todo not found"
 			}
 
 			const deletedTodo = todos[idx]
